@@ -1,14 +1,13 @@
-const { connectDB } = require("../db/db");
+const { connectDB, pool } = require("../db/db");
 
 const createSubscription = async (userId) => {
-  const client = await connectDB();
   const insertQuery = `
     INSERT INTO user_subscriptions (user_id, plan_name, start_date, end_date, is_active)
     VALUES ($1, 'free', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '30 days', TRUE)
     RETURNING *;
   `;
   try {
-    const result = await client.query(insertQuery, [userId]);
+    const result = await pool.query(insertQuery, [userId]);
     return {
       success: true,
       status: 201,
@@ -23,13 +22,10 @@ const createSubscription = async (userId) => {
       message: "Failed to create subscription",
       error: err.message,
     };
-  } finally {
-    client.release();
   }
 };
 
 const getSubscriptionByUserId = async (userId) => {
-  const client = await connectDB();
   const query = `
     SELECT * FROM user_subscriptions
     WHERE user_id = $1
@@ -38,7 +34,7 @@ const getSubscriptionByUserId = async (userId) => {
   `;
 
   try {
-    const result = await client.query(query, [userId]);
+    const result = await pool.query(query, [userId]);
     if (result.rowCount === 0) {
       return {
         success: false,
@@ -61,8 +57,6 @@ const getSubscriptionByUserId = async (userId) => {
       message: "Error fetching subscription",
       error: err.message,
     };
-  } finally {
-    client.release();
   }
 };
 
