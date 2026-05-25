@@ -1,4 +1,4 @@
-const { connectDB } = require("../db/db");
+const { connectDB, pool } = require("../db/db");
 
 // Utility: Handle DB errors
 const handleError = (err) => {
@@ -11,27 +11,23 @@ const handleError = (err) => {
 
 // ✅ Get all users
 const getAllUsers = async () => {
-  const client = await connectDB();
   const query = "SELECT user_id, name, email, company, role FROM users";
 
   try {
-    const res = await client.query(query);
+    const res = await pool.query(query);
     return { success: true, status: 200, data: res.rows };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
 // ✅ Get one user by ID
 const getUser = async (id) => {
-  const client = await connectDB();
   const query =
     "SELECT user_id, name, email, company, role FROM users WHERE user_id = $1";
 
   try {
-    const res = await client.query(query, [parseInt(id)]);
+    const res = await pool.query(query, [parseInt(id)]);
     if (res.rowCount === 0) {
       return {
         success: false,
@@ -42,14 +38,11 @@ const getUser = async (id) => {
     return { success: true, status: 200, data: res.rows[0] };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
 // ✅ Create new user
 const createUser = async (data) => {
-  const client = await connectDB();
   const query = `
     INSERT INTO users (name, email, password, company)
     VALUES ($1, $2, $3, $4)
@@ -58,7 +51,7 @@ const createUser = async (data) => {
   const values = [data.name, data.email, data.password, data.company];
 
   try {
-    const res = await client.query(query, values);
+    const res = await pool.query(query, values);
     return { success: true, status: 201, data: res.rows[0] };
   } catch (err) {
     if (err.code === "23505") {
@@ -69,17 +62,12 @@ const createUser = async (data) => {
       };
     }
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
 // ✅ Update user
-// ✅ Update user
 const updateUser = async (id, data) => {
-  const client = await connectDB();
-
-  // ✅ Basic input validation
+  // ✅ Basic input validation moved to top to fail fast before pulling pool connections
   if (!id || !data?.name || !data?.role || !data?.company) {
     return {
       success: false,
@@ -95,11 +83,10 @@ const updateUser = async (id, data) => {
     RETURNING user_id, name, email, company, role
   `;
 
-  // Assuming user_id is a string (UUID or TEXT)
   const values = [data.name, data.role, data.company, id];
 
   try {
-    const res = await client.query(query, values);
+    const res = await pool.query(query, values);
 
     if (res.rowCount === 0) {
       return {
@@ -115,24 +102,21 @@ const updateUser = async (id, data) => {
       data: res.rows[0],
     };
   } catch (err) {
-    console.error("Error updating user:", err); // helpful for debugging
+    console.error("Error updating user:", err);
     return {
       success: false,
       status: 500,
       error: "An unexpected error occurred while updating the user.",
     };
-  } finally {
-    client.release();
   }
 };
 
 // ✅ Delete user
 const deleteUser = async (id) => {
-  const client = await connectDB();
   const query = "DELETE FROM users WHERE user_id = $1 RETURNING *";
 
   try {
-    const res = await client.query(query, [parseInt(id)]);
+    const res = await pool.query(query, [parseInt(id)]);
     if (res.rowCount === 0) {
       return {
         success: false,
@@ -147,8 +131,6 @@ const deleteUser = async (id) => {
     };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
