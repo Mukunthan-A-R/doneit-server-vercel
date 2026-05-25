@@ -1,9 +1,7 @@
-const { connectDB } = require("../db/db");
+const { connectDB, pool } = require("../db/db");
 const { hasProjectAccess } = require("./projectAccess");
 
 const fetchTasksByProjectId = async (userId, projectId) => {
-  const client = await connectDB();
-
   const sendResponse = (status, success, message, data = null) => ({
     status,
     success,
@@ -12,6 +10,7 @@ const fetchTasksByProjectId = async (userId, projectId) => {
   });
 
   try {
+    // 1. Check access first. Since hasProjectAccess uses pool.query internally,
     const accessGranted = await hasProjectAccess(userId, projectId);
     if (!accessGranted) {
       return sendResponse(403, false, "Access denied");
@@ -24,7 +23,8 @@ const fetchTasksByProjectId = async (userId, projectId) => {
       WHERE t.project_id = $1
     `;
 
-    const result = await client.query(query, [projectId]);
+    // 2. Safely borrow a connection slot for the main query using pool.query
+    const result = await pool.query(query, [projectId]);
 
     if (result.rows.length > 0) {
       return sendResponse(200, true, "Tasks fetched successfully", result.rows);
@@ -34,8 +34,6 @@ const fetchTasksByProjectId = async (userId, projectId) => {
   } catch (err) {
     console.error("fetchTasksByProjectId error:", err);
     return sendResponse(500, false, "Internal server error");
-  } finally {
-    client.release();
   }
 };
 
