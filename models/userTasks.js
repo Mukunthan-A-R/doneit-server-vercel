@@ -1,4 +1,4 @@
-const { connectDB } = require("../db/db");
+const { connectDB, pool } = require("../db/db");
 
 // Utility function to handle errors
 const handleError = (err) => {
@@ -11,7 +11,6 @@ const handleError = (err) => {
 
 // Get all tasks by user_id
 const getTasksByUserId = async (userId) => {
-  const client = await connectDB();
   const text = `
     SELECT 
       t.task_id,
@@ -37,12 +36,10 @@ const getTasksByUserId = async (userId) => {
   `;
 
   try {
-    const res = await client.query(text, [userId]);
+    const res = await pool.query(text, [userId]);
     return { success: true, status: 200, data: res.rows };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
