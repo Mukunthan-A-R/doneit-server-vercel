@@ -1,5 +1,5 @@
 // models/userEmail.js
-const { connectDB } = require("../db/db"); // Assuming pool is set up for DB connection
+const { connectDB, pool } = require("../db/db");
 
 // Utility function to handle errors
 const handleError = (err) => {
@@ -12,11 +12,10 @@ const handleError = (err) => {
 
 // Get a user by email
 const getUserByEmail = async (email) => {
-  const client = await connectDB();
-  const text = "SELECT * FROM users WHERE email = $1"; // Query to find user by email
+  const text = "SELECT * FROM users WHERE email = $1";
 
   try {
-    const res = await client.query(text, [email]);
+    const res = await pool.query(text, [email]);
     if (res.rowCount === 0) {
       return {
         success: false,
@@ -24,13 +23,12 @@ const getUserByEmail = async (email) => {
         message: `User with email ${email} not found.`,
       };
     }
+
     // If user is found, return user data excluding password for security
-    const { password, ...user } = res.rows[0]; // Excluding password for security reasons
+    const { password, ...user } = res.rows[0];
     return { success: true, status: 200, data: user };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
