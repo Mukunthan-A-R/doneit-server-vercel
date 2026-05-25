@@ -1,5 +1,5 @@
 const express = require("express");
-const { connectDB } = require("../db/db");
+const { connectDB, pool } = require("../db/db");
 const bcrypt = require("bcryptjs");
 const Joi = require("joi");
 const confirmEmail = require("../utils/confirmEmail");
@@ -17,16 +17,15 @@ router.post("/", async (req, res) => {
   const { error } = validate({ name, email, password, company, role });
   if (error) return res.status(400).send(error.details[0].message);
 
-  const client = await connectDB();
-
-  // Hash the password
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Insert new user into the database
-  const insertUserQuery =
-    "INSERT INTO users (name, email, password , company , role) VALUES ($1, $2, $3, $4 ,$5) RETURNING user_id, name, email";
   try {
-    const newUser = await client.query(insertUserQuery, [
+    // 1. Hash the password BEFORE touching the database connection
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 2. Insert new user into the database via pool.query (Auto opens & closes)
+    const insertUserQuery =
+      "INSERT INTO users (name, email, password , company , role) VALUES ($1, $2, $3, $4 ,$5) RETURNING user_id, name, email";
+
+    const newUser = await pool.query(insertUserQuery, [
       name,
       email,
       hashedPassword,
@@ -36,25 +35,27 @@ router.post("/", async (req, res) => {
 
     const user = newUser.rows[0];
 
-    // Create free trial subscription
+    // 3. Create free trial subscription
     const trialResponse = await createSubscription(user.user_id);
     if (!trialResponse.success) {
       return res.status(500).json({ message: trialResponse.message });
     }
 
-    if (newUser) {
+    if (newUser && newUser.rows.length > 0) {
       const doneItServer = process.env.DONE_IT_SERVER;
-      const activationLink = `${doneItServer}/api/user/activate/${newUser.rows[0].user_id}`;
+      const activationLink = `${doneItServer}/api/user/activate/${user.user_id}`;
 
+      // 4. Send email safely without dragging down database slots
       await confirmEmail(email, name, activationLink);
-      // console.log(process.env.EMAIL_USER, process.env.EMAIL_APP_PASSWORD);
     } else {
-      console.error(err);
-      res.status(500).json({ message: "Failed to Register User System Error" });
+      return res
+        .status(500)
+        .json({ message: "Failed to Register User System Error" });
     }
-    res.status(201).json({
+
+    return res.status(201).json({
       message: "User registered successfully",
-      user: newUser.rows[0],
+      user: user,
     });
   } catch (err) {
     console.error(err);
@@ -63,9 +64,7 @@ router.post("/", async (req, res) => {
         return res.status(400).json({ message: "Email already exists" });
       }
     }
-    res.status(500).json({ message: "Server error" });
-  } finally {
-    client.release();
+    return res.status(500).json({ message: "Server error" });
   }
 });
 

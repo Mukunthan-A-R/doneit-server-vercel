@@ -1,5 +1,6 @@
 const express = require("express");
-const { connectDB } = require("../db/db");
+// Pulled pool out alongside connectDB without changing the import path
+const { connectDB, pool } = require("../db/db");
 const bcrypt = require("bcryptjs");
 const Joi = require("joi");
 const jwt = require("jsonwebtoken");
@@ -20,11 +21,10 @@ router.post("/login", async (req, res) => {
 
   const { email, password } = req.body;
 
-  const client = await connectDB();
-
   try {
     const checkUserQuery = "SELECT * FROM users WHERE email = $1";
-    const userResult = await client.query(checkUserQuery, [email]);
+    // 1. pool.query auto-manages the lifecycle instantly
+    const userResult = await pool.query(checkUserQuery, [email]);
 
     if (userResult.rows.length === 0) {
       return res.status(400).json({ message: "Invalid email or password" });
@@ -39,6 +39,7 @@ router.post("/login", async (req, res) => {
         .json({ message: "Account not activated. Please verify your email." });
     }
 
+    // 2. Heavy CPU task (bcrypt.compare) runs while DB connection is already closed!
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(400).json({ message: "Invalid email or password" });
@@ -50,12 +51,12 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       { userId: user.user_id, email: user.email },
       JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
     const cookieExpiryTime = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    res
+    return res
       .cookie("doneit-session", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
@@ -69,9 +70,7 @@ router.post("/login", async (req, res) => {
       });
   } catch (err) {
     console.error("Login error:", err);
-    res.status(500).json({ message: "Server error" });
-  } finally {
-    client.release();
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
@@ -80,6 +79,7 @@ router.get("/user/activate/:id", async (req, res) => {
   const userId = req.params.id;
 
   try {
+    // Ensure verifyUserById internally uses pool.query as well!
     const user = await verifyUserById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -90,34 +90,30 @@ router.get("/user/activate/:id", async (req, res) => {
 
     html = html.replace("{{APP_URL}}", process.env.DONE_IT_CLIENT || "#");
 
-    res.send(html);
-
-    // .json(user);
+    return res.send(html);
   } catch (error) {
     console.error("Error fetching user:", error);
-    res.status(500).json({ message: "Server error" });
+    return res.status(500).json({ message: "Server error" });
   }
 });
 
 // Protected Route Example
 router.get("/profile", (req, res) => {
-  // Accessing user info from the decoded token
   const { userId, email } = req.user;
-
-  res
+  return res
     .status(200)
     .json({ message: "Profile accessed", user: { userId, email } });
 });
 
 router.get("/auth/me", async (req, res) => {
-  const client = await connectDB();
   try {
     const cookies = req.cookies;
     const token = cookies["doneit-session"];
     const decoded = jwt.verify(token, JWT_SECRET);
 
     const checkUserQuery = "SELECT * FROM users WHERE user_id = $1";
-    const userResult = await client.query(checkUserQuery, [decoded.userId]);
+    // 3. Changed to pool.query to avoid early return leaks during token check failures
+    const userResult = await pool.query(checkUserQuery, [decoded.userId]);
 
     if (userResult.rows.length === 0) {
       return res.status(400).json({ message: "Invalid email or password" });
@@ -125,8 +121,8 @@ router.get("/auth/me", async (req, res) => {
     const user = userResult.rows[0];
     const { password: _, ...userData } = user;
 
-    res.send({
-      message: "Authentication succesful!",
+    return res.send({
+      message: "Authentication successful!",
       token,
       user: userData,
     });
@@ -134,22 +130,20 @@ router.get("/auth/me", async (req, res) => {
     console.log("🚀 ~ router.get ~ err:", err);
     return res
       .cookie("doneit-session", "", {
-        expires: 0,
+        expires: new Date(0), // Set an explicit date object for safety
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
       })
       .status(401)
-      .json({ message: "Auth token Expired" }); // <-- must return here too
-  } finally {
-    client.release();
+      .json({ message: "Auth token Expired" });
   }
 });
 
 router.get("/auth/logout", (req, res) => {
-  res
+  return res
     .cookie("doneit-session", "", {
-      expires: 0,
+      expires: new Date(0),
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",

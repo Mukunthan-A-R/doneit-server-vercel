@@ -25,12 +25,10 @@ const pool = new Pool(poolConfig);
 
 const connectDB = async () => {
   try {
-    const client = await pool.connect(); // Get a client from the pool
-    console.log("Connected to PostgreSQL");
-    // client.release();
-    return client;
+    await pool.query("SELECT 1");
+    console.log("🚀 Connected to PostgreSQL (Pool Ready)");
   } catch (err) {
-    console.error("Connection error", err.stack);
+    console.error("❌ Connection error", err.stack);
   }
 };
 
