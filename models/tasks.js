@@ -1,5 +1,5 @@
 // model/tasks.js
-const { connectDB } = require("../db/db"); // Assuming pool is set up for DB connection
+const { connectDB, pool } = require("../db/db");
 
 // Utility function to handle errors
 const handleError = (err) => {
@@ -12,24 +12,20 @@ const handleError = (err) => {
 
 // Get all tasks
 const getAllTasks = async () => {
-  const client = await connectDB();
-  const text = "SELECT * FROM tasks"; // Assuming 'tasks' is the table name
+  const text = "SELECT * FROM tasks";
   try {
-    const res = await client.query(text);
+    const res = await pool.query(text);
     return { success: true, status: 200, data: res.rows };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
 // Get a task by ID
 const getTask = async (id) => {
-  const client = await connectDB();
   const text = "SELECT * FROM tasks WHERE task_id = $1";
   try {
-    const res = await client.query(text, [parseInt(id)]);
+    const res = await pool.query(text, [parseInt(id)]);
     if (res.rowCount === 0) {
       return {
         success: false,
@@ -40,20 +36,17 @@ const getTask = async (id) => {
     return { success: true, status: 200, data: res.rows[0] };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
 // Create a new task
 const createTask = async (data) => {
-  const client = await connectDB();
   const text = `
     INSERT INTO tasks (project_id, title, description, status, time_duration, start_date, end_date, created_date, created_by)
     VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE, $8) RETURNING *;
   `;
   const values = [
-    data.project_id, // The ID of the associated project
+    data.project_id,
     data.title,
     data.description,
     data.status,
@@ -64,25 +57,22 @@ const createTask = async (data) => {
   ];
 
   try {
-    const res = await client.query(text, values);
+    const res = await pool.query(text, values);
     return { success: true, status: 201, data: res.rows[0] };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
 // Update an existing task
 const updateTask = async (id, data) => {
-  const client = await connectDB();
   const text = `
     UPDATE tasks
     SET project_id = $1, title = $2, description = $3, status = $4, time_duration = $5, start_date = $6, end_date = $7
     WHERE task_id = $8 RETURNING *;
   `;
   const values = [
-    data.project_id, // The ID of the associated project
+    data.project_id,
     data.title,
     data.description,
     data.status,
@@ -93,7 +83,7 @@ const updateTask = async (id, data) => {
   ];
 
   try {
-    const res = await client.query(text, values);
+    const res = await pool.query(text, values);
     if (res.rowCount === 0) {
       return {
         success: false,
@@ -104,18 +94,15 @@ const updateTask = async (id, data) => {
     return { success: true, status: 200, data: res.rows[0] };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
 // Delete a task by ID
 const deleteTask = async (id) => {
-  const client = await connectDB();
   const text = "DELETE FROM tasks WHERE task_id = $1 RETURNING *";
 
   try {
-    const res = await client.query(text, [parseInt(id)]);
+    const res = await pool.query(text, [parseInt(id)]);
     if (res.rowCount === 0) {
       return {
         success: false,
@@ -130,8 +117,6 @@ const deleteTask = async (id) => {
     };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
