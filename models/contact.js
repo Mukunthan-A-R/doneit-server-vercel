@@ -1,8 +1,7 @@
 // models/contact.js
-const { connectDB } = require("../db/db");
+const { connectDB, pool } = require("../db/db");
 
 const createContactMessage = async ({ name, email, message }) => {
-  const client = await connectDB();
   const query = `
     INSERT INTO contact_messages (name, email, message)
     VALUES ($1, $2, $3) RETURNING *;
@@ -10,7 +9,7 @@ const createContactMessage = async ({ name, email, message }) => {
   const values = [name, email, message];
 
   try {
-    const result = await client.query(query, values);
+    const result = await pool.query(query, values);
     return {
       success: true,
       status: 201,
@@ -23,8 +22,6 @@ const createContactMessage = async ({ name, email, message }) => {
       status: 500,
       message: "Failed to save message.",
     };
-  } finally {
-    client.release();
   }
 };
 
