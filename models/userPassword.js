@@ -1,14 +1,12 @@
-const { connectDB } = require("../db/db");
+const { connectDB, pool } = require("../db/db");
 const bcrypt = require("bcryptjs");
 
 // Change user password after verifying current password
 async function changePassword(id, currentPassword, newPassword) {
-  const client = await connectDB();
-
   try {
-    // 1. Get current hashed password from DB
+    // 1. Get current hashed password from DB via pool.query (Instantly released)
     const getUserQuery = "SELECT password FROM users WHERE user_id = $1";
-    const userRes = await client.query(getUserQuery, [id]);
+    const userRes = await pool.query(getUserQuery, [id]);
 
     if (userRes.rowCount === 0) {
       return {
@@ -20,7 +18,7 @@ async function changePassword(id, currentPassword, newPassword) {
 
     const hashedPassword = userRes.rows[0].password;
 
-    // 2. Compare currentPassword with stored hash
+    // 2. Compare currentPassword with stored hash (No active DB connection held)
     const isMatch = await bcrypt.compare(currentPassword, hashedPassword);
     if (!isMatch) {
       return {
@@ -30,13 +28,13 @@ async function changePassword(id, currentPassword, newPassword) {
       };
     }
 
-    // 3. Hash new password
+    // 3. Hash new password (No active DB connection held)
     const newHashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // 4. Update password in DB
+    // 4. Update password in DB via pool.query (Borrowed and returned instantly)
     const updateQuery =
       "UPDATE users SET password = $1 WHERE user_id = $2 RETURNING user_id, name, email, company, role";
-    const updateRes = await client.query(updateQuery, [newHashedPassword, id]);
+    const updateRes = await pool.query(updateQuery, [newHashedPassword, id]);
 
     return {
       success: true,
@@ -51,8 +49,6 @@ async function changePassword(id, currentPassword, newPassword) {
       status: 500,
       error: "An unexpected error occurred while changing password.",
     };
-  } finally {
-    client.release();
   }
 }
 
