@@ -16,9 +16,9 @@ const poolConfig = {
 
 // Automatically inject serverless optimizations ONLY when in production
 if (isProduction) {
-  poolConfig.max = 1; // Max 1 connection per serverless function instance
-  poolConfig.idleTimeoutMillis = 10000; // Close idle clients quickly to free up database slots
-  // poolConfig.connectionTimeoutMillis = 5000;
+  poolConfig.max = 10; // Max 10 connection per serverless function instance
+  poolConfig.idleTimeoutMillis = 30000; // Close idle clients quickly to free up database slots
+  poolConfig.connectionTimeoutMillis = 2000;
 }
 
 const pool = new Pool(poolConfig);
