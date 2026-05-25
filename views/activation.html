@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Account Activated – done it</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Inter", sans-serif;
+        background-color: #f9fafb;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        color: #1f2937;
+      }
+      .card {
+        background-color: #ffffff;
+        padding: 48px 36px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        max-width: 440px;
+        width: 100%;
+        text-align: center;
+      }
+      .logo {
+        height: 150px;
+        width: auto;
+        object-fit: contain;
+      }
+
+      h1 {
+        font-size: 24px;
+        color: #2e7d32;
+        margin-bottom: 10px;
+      }
+      p {
+        font-size: 15px;
+        line-height: 1.6;
+        color: #374151;
+        margin: 8px 0;
+      }
+      .btn {
+        display: inline-block;
+        margin-top: 24px;
+        padding: 12px 28px;
+        background-color: #0052cc;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 14px;
+        transition: background-color 0.3s ease;
+      }
+      .btn:hover {
+        background-color: #003e99;
+      }
+      .footer {
+        margin-top: 30px;
+        font-size: 13px;
+        color: #6b7280;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <img
+        src="https://i.ibb.co/xSXfq2gL/Sandy-Soft.png"
+        alt="done it logo"
+        class="logo"
+      />
+
+      <h1>Account Activated</h1>
+      <p>Hi, your account is now active and ready to go.</p>
+      <p>You may now close this window or return to the app.</p>
+      <a href="{{APP_URL}}" class="btn">Launch done it</a>
+      <div class="footer">
+        This activation confirmation is from <strong>done it</strong>, a
+        minimalist work management software,<br />
+        proudly provided by <strong>Sandy Soft</strong>.
+      </div>
+    </div>
+  </body>
+</html>

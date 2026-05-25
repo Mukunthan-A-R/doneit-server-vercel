@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Done It – Server Status</title>
+    <style>
+      :root {
+        --primary: #2f5be7;
+        --background: #ffffff;
+        --text: #111111;
+        --subtle: #e9eef7;
+        --muted: #555555;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        background-color: var(--background);
+        color: var(--text);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .card {
+        background: var(--subtle);
+        padding: 2rem 2.5rem;
+        max-width: 640px;
+        width: 100%;
+        border-radius: 4px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        text-align: center;
+        border: 1px solid #d1dbe8;
+      }
+
+      h1 {
+        color: var(--primary);
+        font-size: 2rem;
+        margin-bottom: 0.4rem;
+        letter-spacing: 0.3px;
+      }
+
+      h2 {
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--muted);
+        margin-bottom: 1.4rem;
+      }
+
+      p {
+        font-size: 0.94rem;
+        line-height: 1.5;
+        color: #222;
+        margin-bottom: 1rem;
+      }
+
+      .footer {
+        margin-top: 2rem;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      .footer strong {
+        color: var(--primary);
+      }
+
+      @media (max-width: 600px) {
+        .card {
+          margin: 1rem;
+          padding: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Done It</h1>
+      <h2>Server is running – API is active</h2>
+
+      <p>
+        Welcome to the backend of <strong>Done It</strong>, a minimalist
+        workflow and task management system. This server is currently online and
+        connected. All core services including authentication, task routing, and
+        collaboration endpoints are ready.
+      </p>
+
+      <p>
+        This service is built and maintained by <strong>Sandy Soft</strong>,
+        focused on delivering clean, scalable, and efficient productivity tools.
+      </p>
+
+      <div class="footer">
+        &copy; 2025 <strong>Sandy Soft</strong>. All rights reserved.
+      </div>
+    </div>
+  </body>
+</html>
