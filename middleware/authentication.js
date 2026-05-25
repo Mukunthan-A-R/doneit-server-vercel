@@ -1,5 +1,4 @@
 const express = require("express");
-// Pulled pool out alongside connectDB without changing the import path
 const { connectDB, pool } = require("../db/db");
 const bcrypt = require("bcryptjs");
 const Joi = require("joi");
