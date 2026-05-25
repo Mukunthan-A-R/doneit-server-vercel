@@ -1,5 +1,5 @@
 // model/projects.js
-const { connectDB } = require("../db/db"); // Assuming pool is set up for DB connection
+const { connectDB, pool } = require("../db/db");
 
 // Utility function to handle errors
 const handleError = (err) => {
@@ -12,24 +12,21 @@ const handleError = (err) => {
 
 // Get all projects
 const getAllProjects = async () => {
-  const client = await connectDB();
-  const text = "SELECT * FROM projects"; // Assuming 'projects' is the table name
+  const text = "SELECT * FROM projects";
   try {
-    const res = await client.query(text);
+    // pool.query handles checkout and release automatically
+    const res = await pool.query(text);
     return { success: true, status: 200, data: res.rows };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
 // Get a project by ID
 const getProject = async (id) => {
-  const client = await connectDB();
   const text = "SELECT * FROM projects WHERE project_id = $1";
   try {
-    const res = await client.query(text, [parseInt(id)]);
+    const res = await pool.query(text, [parseInt(id)]);
     if (res.rowCount === 0) {
       return {
         success: false,
@@ -40,14 +37,11 @@ const getProject = async (id) => {
     return { success: true, status: 200, data: res.rows[0] };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
 // Create a new project
 const createProject = async (data) => {
-  const client = await connectDB();
   const text = `
     INSERT INTO projects (name, description, start_date, end_date, status, priority, created)
     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;
@@ -59,22 +53,19 @@ const createProject = async (data) => {
     data.end_date,
     data.status,
     data.priority,
-    data.created, // This should be the user_id of the creator
+    data.created,
   ];
 
   try {
-    const res = await client.query(text, values);
+    const res = await pool.query(text, values);
     return { success: true, status: 201, data: res.rows[0] };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
 // Update an existing project
 const updateProject = async (id, data) => {
-  const client = await connectDB();
   const text = `
     UPDATE projects
     SET name = $1, description = $2, start_date = $3, end_date = $4, status = $5, priority = $6
@@ -91,7 +82,7 @@ const updateProject = async (id, data) => {
   ];
 
   try {
-    const res = await client.query(text, values);
+    const res = await pool.query(text, values);
     if (res.rowCount === 0) {
       return {
         success: false,
@@ -102,18 +93,15 @@ const updateProject = async (id, data) => {
     return { success: true, status: 200, data: res.rows[0] };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
 // Delete a project by ID
 const deleteProject = async (id) => {
-  const client = await connectDB();
   const text = "DELETE FROM projects WHERE project_id = $1 RETURNING *";
 
   try {
-    const res = await client.query(text, [parseInt(id)]);
+    const res = await pool.query(text, [parseInt(id)]);
     if (res.rowCount === 0) {
       return {
         success: false,
@@ -128,8 +116,6 @@ const deleteProject = async (id) => {
     };
   } catch (err) {
     return handleError(err);
-  } finally {
-    client.release();
   }
 };
 
