@@ -14,25 +14,15 @@ app.use(cookieParser());
 
 // ✅ CORS configuration to allow all origins
 const corsOptions = {
-  origin: [
-    "http://localhost:5173",
-    "https://done-it-nyec.onrender.com",
-    "https://doneitweb.netlify.app",
-    "https://doneit-server-vercel-e5yreh3l4-doneit-s-projects.vercel.app",
-    "https://doneit-server-vercel.vercel.app",
-    "http://localhost:5186",
-    "https://doneitapp.netlify.app",
-    "https://doneit.online",
-  ],
+  origin: true,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-  optionsSuccessStatus: 200,
 };
 
 // ✅ Apply CORS middleware globally
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+// app.options("*", cors(corsOptions));
 
 // ✅ Middleware and Routes
 const task = require("./routes/tasks");
