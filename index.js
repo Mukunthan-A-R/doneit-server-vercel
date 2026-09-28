@@ -16,6 +16,7 @@ app.use(cookieParser());
 const corsOptions = {
   origin: [
     "http://localhost:5173",
+    "https://done-it-nyec.onrender.com",
     "https://doneitweb.netlify.app",
     "https://doneit-server-vercel-e5yreh3l4-doneit-s-projects.vercel.app",
     "https://doneit-server-vercel.vercel.app",
