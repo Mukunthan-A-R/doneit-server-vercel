@@ -31,7 +31,7 @@ const corsOptions = {
 
 // ✅ Apply CORS middleware globally
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+// app.options("*", cors(corsOptions));
 
 // ✅ Middleware and Routes
 const task = require("./routes/tasks");
